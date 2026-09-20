@@ -2879,6 +2879,8 @@ let doMarkPossiblyUpdated arch =
   match arch with
     ArchiveFile (desc, fp, stamp, ress) ->
       ArchiveFile (desc, fp, Fileinfo.RescanStamp, ress)
+  | ArchiveDir (desc, ch) ->
+      ArchiveDir (fst (Props.setDirChangeFlag desc Props.changedDirStamp 0), ch)
   | _ ->
       (* Should not happen, actually.  But this is hard to test... *)
       arch

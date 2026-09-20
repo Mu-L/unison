@@ -511,6 +511,22 @@ let updateSourceArchiveLocal (fspathFrom, (localPathFrom, uiFrom, errPaths)) =
            (Fspath.toDebugString fspathFrom) (Path.toString p));
        Update.replaceArchiveLocal fspathFrom p Update.NoArchive)
     errPaths;
+  (* In a specific scenario, when
+      - the copied directory was previously already synced (for example,
+        it was synced, subsequently deleted in the other replica and then
+        attempted to be copied back from this replica) meaning it exists
+        in the archive and is subject for dirFastCheck,
+      - the copy partially failed (we just check [errPaths] to see if there
+        were any child errors, without knowing if the failed paths were
+        previously synced with the other replica), and
+      - the copied directory itself wasn't updated,
+
+    then the dirFastCheck mechanism will miss the failed/unsynced children
+    at the next updates scan (and will continue missing them until either the
+    directory itself is updated or fastcheck is temporarily disabled).
+
+    To fix this, mark the parent directory as updated to bypass fastcheck. *)
+  if errPaths <> [] then Update.markPossiblyUpdated fspathFrom localPathFrom;
   Stasher.stashCurrentVersion fspathFrom localPathFrom None;
   Lwt.return ()
 
